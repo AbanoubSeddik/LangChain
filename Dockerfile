@@ -10,18 +10,18 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 # Copy requirements file first to leverage Docker cache
-COPY requirements.txt .
+COPY uv.lock pyproject.toml README.md .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN uv sync --no-install-package uni_ai_chatbot
 
 # Copy application code
-COPY *.py .
+COPY src ./src
 
-# Create a script to run the application
-RUN echo '#!/bin/bash\npython main.py' > /app/run.sh && \
-    chmod +x /app/run.sh
+RUN uv sync
 
 # Set the default command (this will be overridden by docker-compose)
-CMD ["/app/run.sh"]
+ENTRYPOINT ["uv", "run", "python", "-m", "uni_ai_chatbot.main"]

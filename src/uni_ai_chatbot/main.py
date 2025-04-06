@@ -1,15 +1,19 @@
 import os
-from langchain_community.vectorstores import FAISS
+from pathlib import Path
+
 from langchain.chains import RetrievalQA
 from langchain_community.document_loaders import TextLoader
-from langchain_text_splitters import CharacterTextSplitter
+from langchain_community.vectorstores import FAISS
 from langchain_ollama import OllamaEmbeddings
 from langchain_ollama import OllamaLLM
+from langchain_text_splitters import CharacterTextSplitter
+
+from uni_ai_chatbot.resources import get_resource
 
 # Get Ollama host from environment variable or use default
 ollama_host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 
-file_path = "data.txt"
+file_path = get_resource(relative_path=Path("data.txt"))
 loader = TextLoader(file_path)
 documents = loader.load()
 
