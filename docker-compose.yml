@@ -2,7 +2,7 @@ services:
   chatbot:
     build:
       context: .
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
     environment:
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
       HF_TOKEN: ${HF_TOKEN}  # Optional, for real tokenizer
