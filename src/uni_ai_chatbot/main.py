@@ -1,40 +1,48 @@
 import os
 from pathlib import Path
-
 from langchain.chains import RetrievalQA
 from langchain_community.document_loaders import TextLoader
 from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings
-from langchain_ollama import OllamaLLM
 from langchain_text_splitters import CharacterTextSplitter
+from langchain_mistralai import MistralAIEmbeddings
+from langchain_mistralai import ChatMistralAI
+
 
 from uni_ai_chatbot.resources import get_resource
 
-# Get Ollama host from environment variable or use default
-ollama_host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+# Load API key from env (make sure it's set)
+mistral_api_key = os.environ.get("MISTRAL_API_KEY")
+if not mistral_api_key:
+    raise ValueError("MISTRAL_API_KEY is not set in environment variables")
 
+# Load and split text
 file_path = get_resource(relative_path=Path("data.txt"))
 loader = TextLoader(file_path)
 documents = loader.load()
 
 text_splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=20)
 split_docs = text_splitter.split_documents(documents)
-
 texts = [doc.page_content for doc in split_docs]
 
-# Use environment-configured Ollama host
-embeddings = OllamaEmbeddings(model="llama3.2:latest", base_url=ollama_host)
+# Use Mistral embeddings (ensure the Mistral API and embeddings functionality is available)
+embeddings = MistralAIEmbeddings(api_key=mistral_api_key)
 vector_store = FAISS.from_texts(texts, embeddings)
 retriever = vector_store.as_retriever()
 
-# Use environment-configured Ollama host
-llm = OllamaLLM(model="llama3.2:latest", base_url=ollama_host)
+# Use ChatMistralAI for LLM
+llm = ChatMistralAI(
+    model="mistral-large-latest",
+    temperature=0,
+    max_retries=2
+)
+
+# Build QA chain
 qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
 
 
+# CLI
 def run_queries():
     queries = []
-
     print("Enter your queries (type 'done' to finish):")
     while True:
         query = input("> ")

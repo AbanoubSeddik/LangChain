@@ -1,51 +1,11 @@
 services:
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags", "||", "exit", "0"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
-
-  app:
+  chatbot:
     build:
       context: .
       dockerfile: Dockerfile
-    volumes:
-      - ./data.txt:/app/data.txt
     environment:
-      - OLLAMA_HOST=http://ollama:11434
-    depends_on:
-      ollama:
-        condition: service_healthy
-    # Improved model check
-    command: >
-      sh -c "
-        echo 'Waiting for Ollama to start fully...' &&
-        sleep 10 &&
-        echo 'Checking if llama3.2 model is already installed...' &&
-        MODEL_CHECK=$$(curl -s http://ollama:11434/api/tags | jq '.models | map(select(.name == \"llama3.2\")) | length') &&
-        if [ $$MODEL_CHECK -eq 0 ]; then
-          echo 'Model not found, downloading llama3.2...' &&
-          curl -X POST http://ollama:11434/api/pull -d '{\"model\":\"llama3.2\"}';
-        else
-          echo 'Model llama3.2 is already installed, skipping download';
-        fi &&
-        echo 'Starting application...' &&
-        /app/run.sh
-      "
-
-
-
-volumes:
-  ollama-data:
-    # Use an external volume if you want to preserve models between runs
-    # Comment this line if you want a fresh volume each time
-    external: false
-    # To use your host's Ollama models, set external: true and create the volume first
-    # with: docker volume create --name ollama-data
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      HF_TOKEN: ${HF_TOKEN}  # Optional, for real tokenizer
+    volumes:
+      - ./src:/app/src
+    restart: unless-stopped
